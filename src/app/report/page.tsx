@@ -9,12 +9,7 @@ import LocationPicker from "@/components/report/LocationPicker";
 import ImageUpload from "@/components/report/ImageUpload";
 import SeverityPicker from "@/components/report/SeverityPicker";
 import { useRouter } from "next/navigation";
-
-const steps = [
-  { label: "Location", icon: MapPin },
-  { label: "Photo", icon: Camera },
-  { label: "Severity", icon: AlertTriangle },
-];
+import { useTranslation } from "@/lib/i18n";
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -39,6 +34,13 @@ export default function ReportPage() {
 
   const addReport = useReportStore((s) => s.addReport);
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const steps = [
+    { label: t("report.stepLocation"), icon: MapPin },
+    { label: t("report.stepPhoto"), icon: Camera },
+    { label: t("report.stepSeverity"), icon: AlertTriangle },
+  ];
 
   const canProceed = useCallback(() => {
     if (currentStep === 0) return !!location;
@@ -87,9 +89,9 @@ export default function ReportPage() {
           >
             <Check className="w-10 h-10" />
           </motion.div>
-          <h2 className="text-2xl font-bold mb-3">Report Submitted!</h2>
+          <h2 className="text-2xl font-bold mb-3">{t("report.submitted")}</h2>
           <p className="text-muted-foreground mb-8">
-            Your garbage hotspot report has been logged. Track its status on the dashboard.
+            {t("report.submittedDesc")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <motion.button
@@ -98,7 +100,7 @@ export default function ReportPage() {
               onClick={() => router.push("/dashboard")}
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand to-brand-dark text-white font-semibold cursor-pointer"
             >
-              View Dashboard
+              {t("report.viewDashboard")}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.03 }}
@@ -113,7 +115,7 @@ export default function ReportPage() {
               }}
               className="px-6 py-3 rounded-xl glass border border-border/40 font-semibold cursor-pointer"
             >
-              Report Another
+              {t("report.reportAnother")}
             </motion.button>
           </div>
         </motion.div>
@@ -216,7 +218,7 @@ export default function ReportPage() {
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass border border-border/40 text-sm font-medium disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            {t("report.back")}
           </motion.button>
           <motion.button
             whileHover={canProceed() ? { scale: 1.03, boxShadow: "0 0 30px rgba(6,182,212,0.25)" } : {}}
@@ -225,7 +227,7 @@ export default function ReportPage() {
             disabled={!canProceed()}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-dark text-white text-sm font-semibold disabled:opacity-30 disabled:pointer-events-none shadow-lg shadow-brand/20 cursor-pointer"
           >
-            {currentStep === 2 ? "Submit Report" : "Continue"}
+            {currentStep === 2 ? t("report.submitReport") : t("report.continue")}
             {currentStep === 2 ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
           </motion.button>
         </div>

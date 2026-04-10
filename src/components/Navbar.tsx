@@ -6,16 +6,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { MapPin, Menu, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/report", label: "Report Spot" },
-  { href: "/dashboard", label: "Dashboard" },
-];
+import { useTranslation } from "@/lib/i18n";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useTranslation();
+
+  const links = [
+    { href: "/", label: t("nav.home") },
+    { href: "/report", label: t("nav.report") },
+    { href: "/dashboard", label: t("nav.dashboard") },
+    { href: "/leaderboard", label: t("nav.leaderboard") },
+  ];
 
   return (
     <nav className="sticky top-0 z-50 glass border-b border-border/30">
@@ -58,15 +62,21 @@ export function Navbar() {
                 <span className="relative z-10">{link.label}</span>
               </Link>
             ))}
+            <div className="ml-2">
+              <LanguageToggle />
+            </div>
           </div>
 
           {/* Mobile Toggle */}
-          <button
-            className="md:hidden p-2 text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <LanguageToggle />
+            <button
+              className="p-2 text-muted-foreground hover:text-foreground"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 

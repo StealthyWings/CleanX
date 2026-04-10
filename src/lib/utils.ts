@@ -19,3 +19,19 @@ export function timeAgo(timestamp: number): string {
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
+
+/**
+ * Fast fingerprint for image data URLs.
+ * Samples every 100th character of the base64 payload for O(n/100) performance.
+ * Collisions are possible but extremely unlikely for distinct real photos.
+ */
+export function hashImageData(dataUrl: string): string {
+  let hash = 5381;
+  const step = 100;
+  for (let i = 0; i < dataUrl.length; i += step) {
+    hash = ((hash << 5) + hash + dataUrl.charCodeAt(i)) & 0xffffffff;
+  }
+  // Also include the total length to differentiate similar-prefix images
+  hash = ((hash << 5) + hash + dataUrl.length) & 0xffffffff;
+  return hash.toString(36);
+}

@@ -3,7 +3,10 @@
 import { motion } from "framer-motion";
 import StatsRow from "@/components/dashboard/StatsRow";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
+import VolunteerStatsCard from "@/components/dashboard/VolunteerStatsCard";
 import { withNoSSR } from "@/components/MapWrapper";
+import { useTranslation } from "@/lib/i18n";
 
 const ReportMap = withNoSSR(
   () => import("@/components/dashboard/ReportMap"),
@@ -24,6 +27,8 @@ const itemVariants = {
 };
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen gradient-bg-vibrant">
       <motion.div
@@ -35,10 +40,10 @@ export default function DashboardPage() {
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold">
-            Dashboard
+            {t("dashboard.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Real-time garbage hotspot monitoring & volunteer coordination
+            {t("dashboard.subtitle")}
           </p>
         </motion.div>
 
@@ -47,25 +52,25 @@ export default function DashboardPage() {
           <StatsRow />
         </motion.div>
 
-        {/* Map + Activity Feed */}
+        {/* Map + Sidebar */}
         <motion.div variants={itemVariants} className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map */}
           <div className="lg:col-span-2">
             <div className="glass rounded-2xl overflow-hidden border border-border/20">
               <div className="px-5 py-3 border-b border-border/20 flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Live Map</h2>
+                <h2 className="text-sm font-semibold">{t("dashboard.liveMap")}</h2>
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    Low
+                    {t("dashboard.low")}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-orange-400" />
-                    Medium
+                    {t("dashboard.medium")}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-red-400" />
-                    High
+                    {t("dashboard.high")}
                   </span>
                 </div>
               </div>
@@ -75,9 +80,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Activity Feed */}
-          <div className="lg:col-span-1">
+          {/* Sidebar: Volunteer Stats + Activity Feed + Leaderboard */}
+          <div className="lg:col-span-1 space-y-6">
+            <VolunteerStatsCard />
             <ActivityFeed />
+            <LeaderboardWidget />
           </div>
         </motion.div>
       </motion.div>

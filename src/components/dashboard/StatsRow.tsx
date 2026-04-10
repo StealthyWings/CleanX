@@ -4,17 +4,19 @@ import { motion } from "framer-motion";
 import { FileText, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { useReportStore } from "@/lib/store";
+import { useTranslation } from "@/lib/i18n";
 
 export default function StatsRow() {
   const totalReported = useReportStore((s) => s.totalReported());
   const inProgress = useReportStore((s) => s.inProgress());
   const cleaned = useReportStore((s) => s.cleaned());
   const highSeverity = useReportStore((s) => s.highSeverity());
+  const { t } = useTranslation();
 
   const stats = [
     {
       key: "total",
-      label: "Total Reported",
+      label: t("dashboard.totalReported"),
       icon: FileText,
       color: "text-brand-light",
       bg: "bg-brand/10",
@@ -23,7 +25,7 @@ export default function StatsRow() {
     },
     {
       key: "progress",
-      label: "In Progress",
+      label: t("dashboard.inProgress"),
       icon: Clock,
       color: "text-amber-400",
       bg: "bg-amber-500/10",
@@ -32,7 +34,7 @@ export default function StatsRow() {
     },
     {
       key: "cleaned",
-      label: "Cleaned",
+      label: t("dashboard.cleaned"),
       icon: CheckCircle2,
       color: "text-emerald-400",
       bg: "bg-emerald-500/10",
@@ -41,7 +43,7 @@ export default function StatsRow() {
     },
     {
       key: "high",
-      label: "High Severity",
+      label: t("dashboard.highSeverity"),
       icon: AlertTriangle,
       color: "text-red-400",
       bg: "bg-red-500/10",

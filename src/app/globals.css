@@ -19,7 +19,7 @@
   --color-brand-light: #0e7490;
   --color-brand-dark: #065f73;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-poppins), system-ui, -apple-system, sans-serif;
 
   --animate-gradient-shift: gradient-shift 8s ease infinite;
   --animate-float: float 6s ease-in-out infinite;
