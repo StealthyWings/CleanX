@@ -43,3 +43,13 @@ export interface ActivityEntry {
   // Legacy fallback — old entries stored as plain text
   action?: string;
 }
+
+export type CleanResult = 'success' | 'duplicate' | 'flagged';
+
+// Shape returned by GET /api/state and every mutation endpoint
+export interface AppState {
+  reports: Report[];
+  volunteers: Volunteer[];
+  activity: ActivityEntry[];
+  imageHashes: string[];
+}

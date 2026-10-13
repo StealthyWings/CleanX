@@ -9,6 +9,7 @@ import Link from "next/link";
 
 export default function LeaderboardWidget() {
   const volunteers = useReportStore((s) => s.volunteers);
+  const loaded = useReportStore((s) => s.loaded);
   const leaderboard = useMemo(
     () => [...volunteers].sort((a, b) => b.totalPoints - a.totalPoints),
     [volunteers]
@@ -28,7 +29,7 @@ export default function LeaderboardWidget() {
         </Link>
       </div>
       <div className="p-3 space-y-1.5">
-        {top5.length === 0 && (
+        {loaded && top5.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-4">
             {t("leaderboard.noVolunteers")}
           </p>

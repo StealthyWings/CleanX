@@ -27,7 +27,7 @@ export default function StatsRow() {
       key: "progress",
       label: t("dashboard.inProgress"),
       icon: Clock,
-      color: "text-amber-400",
+      color: "text-amber-500",
       bg: "bg-amber-500/10",
       border: "border-amber-500/20",
       value: inProgress,
@@ -36,7 +36,7 @@ export default function StatsRow() {
       key: "cleaned",
       label: t("dashboard.cleaned"),
       icon: CheckCircle2,
-      color: "text-emerald-400",
+      color: "text-emerald-600",
       bg: "bg-emerald-500/10",
       border: "border-emerald-500/20",
       value: cleaned,
@@ -45,7 +45,7 @@ export default function StatsRow() {
       key: "high",
       label: t("dashboard.highSeverity"),
       icon: AlertTriangle,
-      color: "text-red-400",
+      color: "text-red-500",
       bg: "bg-red-500/10",
       border: "border-red-500/20",
       value: highSeverity,
@@ -69,7 +69,7 @@ export default function StatsRow() {
                 <Icon className={`w-5 h-5 ${stat.color}`} />
               </div>
               <div>
-                <p className={`text-2xl sm:text-3xl font-bold ${stat.color}`}>
+                <p className={`font-display text-3xl sm:text-4xl font-semibold ${stat.color}`}>
                   <AnimatedCounter value={stat.value} />
                 </p>
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">

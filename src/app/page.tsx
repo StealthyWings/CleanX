@@ -2,175 +2,147 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { MapPin, BarChart3, Sparkles, ArrowRight, Shield, Zap, Users } from "lucide-react";
-import { GlassCard } from "@/components/GlassCard";
+import { MapPin, ArrowRight, Shield, Zap, Users } from "lucide-react";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
+import { FernIllustration } from "@/components/FernIllustration";
 import { useReportStore } from "@/lib/store";
 import { useTranslation } from "@/lib/i18n";
+
+const MotionLink = motion.create(Link);
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.12, delayChildren: 0.2 },
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 
 export default function HomePage() {
-  const store = useReportStore();
+  const totalReported = useReportStore((s) => s.reports.length);
+  const inProgress = useReportStore((s) => s.reports.filter((r) => r.status === "in-progress").length);
+  const cleaned = useReportStore((s) => s.reports.filter((r) => r.status === "cleaned").length);
+  const highSeverity = useReportStore((s) => s.reports.filter((r) => r.severity === "high" && r.status !== "cleaned").length);
   const { t } = useTranslation();
 
+  const stats = [
+    { label: t("landing.totalReports"), value: totalReported },
+    { label: t("landing.inProgress"), value: inProgress },
+    { label: t("landing.cleaned"), value: cleaned },
+    { label: t("landing.highSeverity"), value: highSeverity },
+  ];
+
+  const features = [
+    { icon: Zap, title: t("landing.feature1Title"), desc: t("landing.feature1Desc") },
+    { icon: Users, title: t("landing.feature2Title"), desc: t("landing.feature2Desc") },
+    { icon: Shield, title: t("landing.feature3Title"), desc: t("landing.feature3Desc") },
+  ];
+
   return (
-    <div className="relative min-h-screen gradient-bg overflow-hidden">
-      {/* Ambient background blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="bg-white">
+      {/* Hero */}
+      <section className="relative overflow-hidden lg:min-h-[calc(100vh-4.5rem)] flex flex-col lg:block">
+        {/* Fern hill — banner on mobile, left half on desktop */}
         <motion.div
-          animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-brand/[0.04] blur-[120px]"
-        />
-        <motion.div
-          animate={{ x: [0, -20, 30, 0], y: [0, 30, -20, 0] }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/[0.03] blur-[100px]"
-        />
-        <motion.div
-          animate={{ x: [0, 15, -15, 0], y: [0, -25, 15, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 right-1/3 w-[350px] h-[350px] rounded-full bg-emerald-500/[0.03] blur-[100px]"
-        />
-      </div>
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="order-2 h-72 sm:h-96 lg:h-auto lg:absolute lg:inset-y-0 lg:left-0 lg:w-[56%] pointer-events-none"
+        >
+          <FernIllustration />
+        </motion.div>
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-20"
-      >
-        {/* Badge */}
-        <motion.div variants={itemVariants} className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-brand/20 text-xs font-medium text-brand-light">
-            <Sparkles className="w-3.5 h-3.5" />
-            {t("landing.badge")}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="order-1 relative z-10 w-full px-4 sm:px-6 lg:pl-[56%] lg:pr-10 xl:pr-16 pt-14 pb-10 lg:py-0 lg:min-h-[calc(100vh-4.5rem)] flex items-center justify-center"
+        >
+          <div className="text-center max-w-xl mx-auto lg:py-20 lg:pl-8">
+            <motion.h1
+              variants={itemVariants}
+              className="font-display font-bold uppercase leading-[0.95] tracking-[0.06em] text-ink text-6xl sm:text-7xl lg:text-6xl xl:text-7xl 2xl:text-8xl mb-8"
+            >
+              <span className="block">{t("landing.heading")}</span>
+              <span className="block text-brand">{t("landing.headingHighlight")}</span>
+            </motion.h1>
+
+            <motion.p
+              variants={itemVariants}
+              className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-10"
+            >
+              {t("landing.subtitle")}
+            </motion.p>
+
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row items-center justify-center gap-3"
+            >
+              <MotionLink
+                href="/report"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-brand hover:bg-brand-light text-white font-display text-xl tracking-wide shadow-lg shadow-brand/25 transition-colors"
+              >
+                <MapPin className="w-5 h-5" />
+                {t("landing.reportBtn")}
+              </MotionLink>
+              <MotionLink
+                href="/dashboard"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-brand/40 text-brand-dark hover:border-brand hover:bg-brand/5 font-display text-xl tracking-wide transition-colors"
+              >
+                {t("landing.viewBtn")}
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </MotionLink>
+            </motion.div>
           </div>
         </motion.div>
+      </section>
 
-        {/* Hero Heading */}
-        <motion.h1
-          variants={itemVariants}
-          className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
-        >
-          {t("landing.heading")}{" "}
-          <span className="bg-gradient-to-r from-brand via-brand-light to-emerald-400 bg-clip-text text-transparent">
-            {t("landing.headingHighlight")}
-          </span>
-        </motion.h1>
-
-        <motion.p
-          variants={itemVariants}
-          className="text-center text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed"
-        >
-          {t("landing.subtitle")}
-        </motion.p>
-
-        {/* CTA Buttons */}
-        <motion.div
-          variants={itemVariants}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20"
-        >
-          <Link href="/report">
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(6,182,212,0.3)" }}
-              whileTap={{ scale: 0.97 }}
-              className="group relative px-8 py-4 rounded-2xl bg-gradient-to-r from-brand to-brand-dark text-white font-semibold text-base shadow-lg shadow-brand/20 flex items-center gap-3 cursor-pointer"
-            >
-              <MapPin className="w-5 h-5" />
-              {t("landing.reportBtn")}
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </motion.button>
-          </Link>
-          <Link href="/dashboard">
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="group px-8 py-4 rounded-2xl glass border border-border/40 text-foreground font-semibold text-base flex items-center gap-3 hover:border-brand/30 transition-colors cursor-pointer"
-            >
-              <BarChart3 className="w-5 h-5 text-brand-light" />
-              {t("landing.viewBtn")}
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1 text-muted-foreground" />
-            </motion.button>
-          </Link>
-        </motion.div>
-
-        {/* Live Stats */}
-        <motion.div variants={itemVariants}>
-          <p className="text-center text-xs uppercase tracking-widest text-muted-foreground mb-6">
-            {t("landing.statsTitle")}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            <GlassCard className="text-center p-5">
-              <p className="text-3xl font-bold text-brand-light mb-1">
-                <AnimatedCounter value={store.totalReported()} />
-              </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("landing.totalReports")}</p>
-            </GlassCard>
-            <GlassCard className="text-center p-5">
-              <p className="text-3xl font-bold text-amber-400 mb-1">
-                <AnimatedCounter value={store.inProgress()} />
-              </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("landing.inProgress")}</p>
-            </GlassCard>
-            <GlassCard className="text-center p-5">
-              <p className="text-3xl font-bold text-emerald-400 mb-1">
-                <AnimatedCounter value={store.cleaned()} />
-              </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("landing.cleaned")}</p>
-            </GlassCard>
-            <GlassCard className="text-center p-5">
-              <p className="text-3xl font-bold text-red-400 mb-1">
-                <AnimatedCounter value={store.highSeverity()} />
-              </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("landing.highSeverity")}</p>
-            </GlassCard>
+      {/* Live stats band */}
+      <section className="bg-fern-dark text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 md:divide-x md:divide-white/10">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center px-4">
+                <p className="font-display text-5xl font-semibold tabular-nums">
+                  <AnimatedCounter value={stat.value} />
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-widest text-white/60">{stat.label}</p>
+              </div>
+            ))}
           </div>
-        </motion.div>
+        </div>
+      </section>
 
-        {/* Features */}
-        <motion.div variants={itemVariants} className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <GlassCard className="text-center p-8">
-            <div className="w-12 h-12 rounded-xl bg-brand/10 text-brand-light flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">{t("landing.feature1Title")}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t("landing.feature1Desc")}
-            </p>
-          </GlassCard>
-          <GlassCard className="text-center p-8">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-4">
-              <Users className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">{t("landing.feature2Title")}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t("landing.feature2Desc")}
-            </p>
-          </GlassCard>
-          <GlassCard className="text-center p-8">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">{t("landing.feature3Title")}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t("landing.feature3Desc")}
-            </p>
-          </GlassCard>
-        </motion.div>
-      </motion.div>
+      {/* Features */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {features.map(({ icon: Icon, title, desc }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="text-center p-8 rounded-3xl border border-border bg-background glow-hover"
+            >
+              <div className="w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center mx-auto mb-5">
+                <Icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-display text-2xl uppercase tracking-wide text-ink mb-2">{title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

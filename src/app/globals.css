@@ -15,39 +15,40 @@
   --color-severity-medium: #ea580c;
   --color-severity-high: #dc2626;
 
-  --color-brand: #0891b2;
-  --color-brand-light: #0e7490;
-  --color-brand-dark: #065f73;
+  /* Olive — buttons, active states, accents */
+  --color-brand: #7a8b3f;
+  --color-brand-light: #5d6d27; /* olive dark enough for text on white */
+  --color-brand-dark: #44511b;
+
+  /* Fern greens — illustration and secondary accents */
+  --color-fern: #3f7a36;
+  --color-fern-light: #8fb56a;
+  --color-fern-dark: #1f3a20;
+  --color-ink: #151912;
 
   --font-sans: var(--font-poppins), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-oswald), var(--font-poppins), "Arial Narrow", sans-serif;
 
-  --animate-gradient-shift: gradient-shift 8s ease infinite;
   --animate-float: float 6s ease-in-out infinite;
   --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
-  --animate-slide-up: slide-up 0.5s ease-out;
-  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-sway: sway 7s ease-in-out infinite;
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: rgba(255, 255, 255, 0.7);
-  --card-foreground: #1e293b;
-  --border: rgba(148, 163, 184, 0.35);
-  --muted: #e2e8f0;
-  --muted-foreground: #64748b;
-  --accent: rgba(8, 145, 178, 0.1);
-  --accent-foreground: #0e7490;
-}
-
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  --background: #fdfdf9;
+  --foreground: #151912;
+  --card: #ffffff;
+  --card-foreground: #20251b;
+  --border: rgba(110, 120, 80, 0.22);
+  --muted: #eef0e5;
+  --muted-foreground: #686d5e;
+  --accent: rgba(122, 139, 63, 0.1);
+  --accent-foreground: #5d6d27;
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  50% { transform: translateY(-12px); }
 }
 
 @keyframes glow-pulse {
@@ -55,24 +56,15 @@
   50% { opacity: 1; }
 }
 
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes counter-tick {
-  from { opacity: 0; transform: scale(1.2); }
-  to { opacity: 1; transform: scale(1); }
+/* Gentle leaf sway for the hero ferns */
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(1.6deg); }
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(8, 145, 178, 0.25) transparent;
+  scrollbar-color: rgba(122, 139, 63, 0.35) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -80,7 +72,7 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(8, 145, 178, 0.25);
+  background: rgba(122, 139, 63, 0.35);
   border-radius: 3px;
 }
 
@@ -91,130 +83,115 @@ body {
   overflow-x: hidden;
 }
 
-/* Glassmorphism utility — light mode */
-.glass {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+::selection {
+  background: rgba(122, 139, 63, 0.22);
 }
 
-.glass-light {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+/* Visible keyboard focus everywhere, without rings on mouse clicks */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
-/* Animated gradient background — light */
-.gradient-bg {
-  background: linear-gradient(
-    -45deg,
-    #f0f9ff,
-    #e0f2fe,
-    #f0fdfa,
-    #ecfeff,
-    #f8fafc
-  );
-  background-size: 400% 400%;
-  animation: gradient-shift 12s ease infinite;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-.gradient-bg-vibrant {
-  background: linear-gradient(
-    135deg,
-    rgba(8, 145, 178, 0.06),
-    rgba(139, 92, 246, 0.04),
-    rgba(8, 145, 178, 0.03),
-    rgba(16, 185, 129, 0.05)
-  );
-  background-size: 400% 400%;
-  animation: gradient-shift 15s ease infinite;
-  background-color: #f8fafc;
-}
+/* Custom component classes live in the components layer so Tailwind
+   utilities (e.g. hover:border-brand) on the same element can override them */
+@layer components {
+  /* Card surface (kept the "glass" name so existing markup picks up the new look) */
+  .glass {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(31, 58, 32, 0.04), 0 4px 16px rgba(31, 58, 32, 0.04);
+  }
 
-/* Glow hover effect — light mode */
-.glow-hover {
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
+  .glass-light {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(110, 120, 80, 0.15);
+  }
 
-.glow-hover:hover {
-  box-shadow: 0 4px 24px rgba(8, 145, 178, 0.12), 0 1px 8px rgba(0,0,0,0.05);
-  transform: translateY(-2px);
-}
+  /* Page backgrounds — clean white with a faint leafy wash */
+  .gradient-bg {
+    background:
+      radial-gradient(60rem 40rem at 0% 0%, rgba(143, 181, 106, 0.1), transparent 60%),
+      radial-gradient(50rem 30rem at 100% 100%, rgba(122, 139, 63, 0.08), transparent 60%),
+      #ffffff;
+  }
 
-/* Severity glow variants */
-.glow-green:hover {
-  box-shadow: 0 4px 24px rgba(22, 163, 74, 0.15), 0 1px 8px rgba(0,0,0,0.04);
-}
+  .gradient-bg-vibrant {
+    background:
+      radial-gradient(70rem 30rem at 100% 0%, rgba(143, 181, 106, 0.1), transparent 60%),
+      var(--background);
+  }
 
-.glow-orange:hover {
-  box-shadow: 0 4px 24px rgba(234, 88, 12, 0.15), 0 1px 8px rgba(0,0,0,0.04);
-}
+  /* Hover lift */
+  .glow-hover {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
 
-.glow-red:hover {
-  box-shadow: 0 4px 24px rgba(220, 38, 38, 0.15), 0 1px 8px rgba(0,0,0,0.04);
+  .glow-hover:hover {
+    box-shadow: 0 10px 30px rgba(31, 58, 32, 0.1), 0 2px 8px rgba(31, 58, 32, 0.05);
+    transform: translateY(-2px);
+  }
+
+  /* Severity glow variants */
+  .glow-green:hover {
+    box-shadow: 0 8px 28px rgba(22, 163, 74, 0.16), 0 1px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .glow-orange:hover {
+    box-shadow: 0 8px 28px rgba(234, 88, 12, 0.16), 0 1px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .glow-red:hover {
+    box-shadow: 0 8px 28px rgba(220, 38, 38, 0.16), 0 1px 8px rgba(0, 0, 0, 0.04);
+  }
 }
 
 /* Map container */
 .leaflet-container {
-  background: #f1f5f9 !important;
+  background: #eef0e5 !important;
   border-radius: 12px;
+  font-family: var(--font-sans);
 }
 
 .leaflet-popup-content-wrapper {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.3) !important;
-  border-radius: 12px !important;
-  color: #1e293b !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(110, 120, 80, 0.25) !important;
+  border-radius: 16px !important;
+  color: #20251b !important;
+  box-shadow: 0 16px 40px rgba(31, 58, 32, 0.16) !important;
 }
 
 .leaflet-popup-tip {
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: #ffffff !important;
 }
 
 .leaflet-popup-close-button {
-  color: #64748b !important;
+  color: #686d5e !important;
   font-size: 20px !important;
   padding: 8px !important;
 }
 
 .leaflet-popup-close-button:hover {
-  color: #0f172a !important;
+  color: #151912 !important;
 }
 
-/* Pulsing marker animation */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.85);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
-}
-
-.pulse-marker::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-  border: 2px solid currentColor;
-}
-
-/* Leaflet control styling — light */
+/* Leaflet control styling */
 .leaflet-control-zoom a {
-  background: rgba(255, 255, 255, 0.9) !important;
-  color: #1e293b !important;
-  border-color: rgba(148, 163, 184, 0.3) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #44511b !important;
+  border-color: rgba(110, 120, 80, 0.25) !important;
 }
 
 .leaflet-control-zoom a:hover {

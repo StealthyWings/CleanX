@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Camera, AlertTriangle, Check, ArrowLeft, ArrowRight } from "lucide-react";
+import { MapPin, Camera, AlertTriangle, Check, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useReportStore } from "@/lib/store";
 import { Severity } from "@/lib/types";
 import LocationPicker from "@/components/report/LocationPicker";
@@ -31,6 +31,8 @@ export default function ReportPage() {
   const [severity, setSeverity] = useState<Severity | null>(null);
   const [aiSuggestion, setAiSuggestion] = useState<Severity | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const addReport = useReportStore((s) => s.addReport);
   const router = useRouter();
@@ -43,26 +45,37 @@ export default function ReportPage() {
   ];
 
   const canProceed = useCallback(() => {
+    if (submitting) return false;
     if (currentStep === 0) return !!location;
     if (currentStep === 1) return !!imageUrl;
     if (currentStep === 2) return !!severity;
     return false;
-  }, [currentStep, location, imageUrl, severity]);
+  }, [currentStep, location, imageUrl, severity, submitting]);
 
-  const next = () => {
+  const next = async () => {
     if (!canProceed()) return;
     if (currentStep < 2) {
       setDirection(1);
       setCurrentStep((s) => s + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       // Submit
-      addReport({
-        lat: location!.lat,
-        lng: location!.lng,
-        imageUrl,
-        severity: severity!,
-      });
-      setSubmitted(true);
+      setSubmitting(true);
+      setSubmitError("");
+      try {
+        await addReport({
+          lat: location!.lat,
+          lng: location!.lng,
+          imageUrl,
+          severity: severity!,
+        });
+        setSubmitted(true);
+        window.scrollTo({ top: 0 });
+      } catch {
+        setSubmitError(t("common.saveFailed"));
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -85,11 +98,11 @@ export default function ReportPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-            className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-6"
+            className="w-20 h-20 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto mb-6"
           >
             <Check className="w-10 h-10" />
           </motion.div>
-          <h2 className="text-2xl font-bold mb-3">{t("report.submitted")}</h2>
+          <h2 className="font-display text-4xl uppercase tracking-wide text-ink mb-3">{t("report.submitted")}</h2>
           <p className="text-muted-foreground mb-8">
             {t("report.submittedDesc")}
           </p>
@@ -98,7 +111,7 @@ export default function ReportPage() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => router.push("/dashboard")}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand to-brand-dark text-white font-semibold cursor-pointer"
+              className="px-7 py-3 rounded-full bg-brand hover:bg-brand-light text-white font-display text-lg tracking-wide transition-colors cursor-pointer"
             >
               {t("report.viewDashboard")}
             </motion.button>
@@ -113,7 +126,7 @@ export default function ReportPage() {
                 setSeverity(null);
                 setAiSuggestion(null);
               }}
-              className="px-6 py-3 rounded-xl glass border border-border/40 font-semibold cursor-pointer"
+              className="px-7 py-3 rounded-full border-2 border-brand/40 text-brand-dark hover:border-brand font-display text-lg tracking-wide transition-colors cursor-pointer"
             >
               {t("report.reportAnother")}
             </motion.button>
@@ -136,19 +149,18 @@ export default function ReportPage() {
               <div key={i} className="flex items-center gap-2">
                 <motion.div
                   animate={{
-                    scale: isActive ? 1.1 : 1,
+                    scale: isActive ? 1.05 : 1,
                     backgroundColor: isComplete
-                      ? "rgba(6,182,212,0.3)"
+                      ? "rgba(122,139,63,0.14)"
                       : isActive
-                      ? "rgba(6,182,212,0.15)"
-                      : "rgba(31,41,55,0.5)",
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border transition-colors"
-                  style={{
+                      ? "rgba(255,255,255,0.9)"
+                      : "rgba(255,255,255,0.5)",
                     borderColor: isComplete || isActive
-                      ? "rgba(6,182,212,0.4)"
-                      : "rgba(75,85,99,0.3)",
+                      ? "rgba(122,139,63,0.5)"
+                      : "rgba(148,163,184,0.35)",
                   }}
+                  aria-current={isActive ? "step" : undefined}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border ${isActive ? "shadow-md shadow-brand/15" : ""}`}
                 >
                   {isComplete ? (
                     <Check className="w-4 h-4 text-brand-light" />
@@ -165,8 +177,8 @@ export default function ReportPage() {
                 </motion.div>
                 {i < steps.length - 1 && (
                   <div
-                    className={`w-8 h-px ${
-                      i < currentStep ? "bg-brand/40" : "bg-border/40"
+                    className={`w-6 sm:w-10 h-0.5 rounded-full transition-colors duration-500 ${
+                      i < currentStep ? "bg-brand/50" : "bg-border"
                     }`}
                   />
                 )}
@@ -208,6 +220,12 @@ export default function ReportPage() {
           </AnimatePresence>
         </div>
 
+        {submitError && (
+          <p role="alert" className="mt-6 text-sm text-red-600 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+            {submitError}
+          </p>
+        )}
+
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8">
           <motion.button
@@ -215,20 +233,26 @@ export default function ReportPage() {
             whileTap={{ scale: 0.97 }}
             onClick={prev}
             disabled={currentStep === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass border border-border/40 text-sm font-medium disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-brand/30 text-brand-dark hover:border-brand bg-white font-display text-base tracking-wide disabled:opacity-0 disabled:pointer-events-none transition-opacity cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             {t("report.back")}
           </motion.button>
           <motion.button
-            whileHover={canProceed() ? { scale: 1.03, boxShadow: "0 0 30px rgba(6,182,212,0.25)" } : {}}
+            whileHover={canProceed() ? { scale: 1.03, boxShadow: "0 8px 24px rgba(122,139,63,0.3)" } : {}}
             whileTap={canProceed() ? { scale: 0.97 } : {}}
             onClick={next}
             disabled={!canProceed()}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-dark text-white text-sm font-semibold disabled:opacity-30 disabled:pointer-events-none shadow-lg shadow-brand/20 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-brand hover:bg-brand-light transition-colors text-white font-display text-base tracking-wide disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed shadow-lg shadow-brand/20 cursor-pointer"
           >
-            {currentStep === 2 ? t("report.submitReport") : t("report.continue")}
-            {currentStep === 2 ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+            {submitting ? t("common.saving") : currentStep === 2 ? t("report.submitReport") : t("report.continue")}
+            {submitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : currentStep === 2 ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <ArrowRight className="w-4 h-4" />
+            )}
           </motion.button>
         </div>
       </div>

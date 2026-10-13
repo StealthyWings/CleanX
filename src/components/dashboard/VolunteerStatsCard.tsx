@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { User, Trophy, Target, ArrowUp, TrendingUp } from "lucide-react";
 import { useReportStore } from "@/lib/store";
@@ -12,27 +12,29 @@ export default function VolunteerStatsCard() {
   const volunteers = useReportStore((s) => s.volunteers);
   const { t } = useTranslation();
 
-  // Editable name
-  const [editName, setEditName] = useState("");
+  // Editable name — seeded from the store; "Change" re-seeds it before clearing
+  const [editName, setEditName] = useState(currentVolunteerName);
   const setCurrentVolunteer = useReportStore((s) => s.setCurrentVolunteer);
-
-  // Sync from store on mount
-  useEffect(() => {
-    if (currentVolunteerName) setEditName(currentVolunteerName);
-  }, [currentVolunteerName]);
 
   const leaderboard = useMemo(
     () => [...volunteers].sort((a, b) => b.totalPoints - a.totalPoints),
     [volunteers]
   );
 
-  const volunteer = useMemo(
-    () => volunteers.find((v) => v.name === currentVolunteerName),
-    [volunteers, currentVolunteerName]
-  );
+  const volunteer = useMemo(() => {
+    if (!currentVolunteerName) return null;
+    return volunteers.find((v) => v.name === currentVolunteerName) || {
+      id: "temp",
+      name: currentVolunteerName,
+      cleanupCount: 0,
+      totalPoints: 0,
+      duplicateAttempts: 0,
+      flagged: false,
+    };
+  }, [volunteers, currentVolunteerName]);
 
   const rank = useMemo(() => {
-    if (!volunteer) return null;
+    if (!volunteer || volunteer.id === "temp") return null;
     return leaderboard.findIndex((v) => v.id === volunteer.id) + 1;
   }, [leaderboard, volunteer]);
 
@@ -71,22 +73,29 @@ export default function VolunteerStatsCard() {
         <p className="text-xs text-muted-foreground mb-3">
           {t("volunteer.enterName")}
         </p>
-        <div className="flex gap-2">
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (editName.trim()) setCurrentVolunteer(editName.trim());
+          }}
+        >
           <input
             type="text"
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             placeholder={t("volunteer.namePlaceholder")}
-            className="flex-1 px-3 py-2 rounded-lg border border-border/40 text-sm bg-white/80 focus:outline-none focus:border-brand/40"
+            aria-label={t("volunteer.namePlaceholder")}
+            className="flex-1 min-w-0 px-4 py-2 rounded-full border border-border/40 text-sm bg-white/80 focus:outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/15 transition-shadow"
           />
           <button
-            onClick={() => editName.trim() && setCurrentVolunteer(editName.trim())}
+            type="submit"
             disabled={!editName.trim()}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-brand to-brand-dark text-white text-sm font-semibold disabled:opacity-40 cursor-pointer"
+            className="px-4 py-2 rounded-full bg-brand hover:bg-brand-light transition-colors text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             {t("volunteer.save")}
           </button>
-        </div>
+        </form>
       </motion.div>
     );
   }
@@ -105,12 +114,15 @@ export default function VolunteerStatsCard() {
           </div>
           <div>
             <h2 className="text-sm font-semibold">{t("volunteer.yourStats")}</h2>
-            <p className="text-xs text-muted-foreground">{currentVolunteerName}</p>
+            <p className="text-xs text-muted-foreground truncate max-w-[12rem]">{currentVolunteerName}</p>
           </div>
         </div>
         <button
-          onClick={() => setCurrentVolunteer("")}
-          className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+          onClick={() => {
+            setEditName(currentVolunteerName);
+            setCurrentVolunteer("");
+          }}
+          className="text-xs px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
         >
           {t("volunteer.change")}
         </button>
@@ -123,7 +135,7 @@ export default function VolunteerStatsCard() {
             {/* Rank */}
             <div className="text-center p-3 rounded-xl bg-amber-500/5 border border-amber-400/15">
               <Trophy className="w-4 h-4 text-amber-500 mx-auto mb-1" />
-              <p className="text-xl font-bold text-amber-600">#{rank}</p>
+              <p className="text-xl font-bold text-amber-600">{rank ? `#${rank}` : "-"}</p>
               <p className="text-[10px] text-muted-foreground uppercase">{t("leaderboard.rank")}</p>
             </div>
             {/* Points */}
@@ -149,10 +161,10 @@ export default function VolunteerStatsCard() {
 
           {/* Cleanups needed to reach top 10 */}
           {cleanupsNeeded && (
-            <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-400/15">
+            <div className="p-3 rounded-xl bg-brand/5 border border-brand/20">
               <div className="flex items-center gap-1.5 mb-2">
-                <ArrowUp className="w-3.5 h-3.5 text-purple-500" />
-                <p className="text-xs font-semibold text-purple-600">
+                <ArrowUp className="w-3.5 h-3.5 text-brand-light" />
+                <p className="text-xs font-semibold text-brand-dark">
                   {t("volunteer.toReachTop10")}
                 </p>
               </div>

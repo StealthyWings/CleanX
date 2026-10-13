@@ -4,8 +4,10 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaf
 import { useReportStore } from "@/lib/store";
 import { Report, Severity, Status, SEVERITY_POINTS } from "@/lib/types";
 import { timeAgo } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, SyntheticEvent } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "@/lib/i18n";
+import { CleanupProofModal } from "@/components/CleanupProofModal";
 
 const SEVERITY_COLORS: Record<Severity, string> = {
   low: "#22c55e",
@@ -15,30 +17,131 @@ const SEVERITY_COLORS: Record<Severity, string> = {
 
 const STATUS_LABELS: Record<Status, { key: string; color: string }> = {
   reported: { key: "map.reported", color: "#f59e0b" },
-  "in-progress": { key: "map.inProgress", color: "#3b82f6" },
+  "in-progress": { key: "map.inProgress", color: "#5d6d27" },
   cleaned: { key: "map.cleaned", color: "#22c55e" },
 };
 
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
-    setTimeout(() => map.invalidateSize(), 100);
+    const timer = setTimeout(() => map.invalidateSize(), 100);
+    return () => clearTimeout(timer);
   }, [map]);
   return null;
 }
 
-function ReportMarker({ report }: { report: Report }) {
+// Swap a missing photo for a neutral placeholder instead of leaving a hole in the popup
+function showImagePlaceholder(e: SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  img.onerror = null;
+  img.src =
+    "data:image/svg+xml," +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120" viewBox="0 0 320 120"><rect width="320" height="120" fill="#f1f5f9"/><g fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(148 48)"><rect x="0" y="0" width="24" height="20" rx="3"/><circle cx="8" cy="7" r="2"/><path d="M24 15l-6-6L4 20"/></g></svg>'
+    );
+}
+
+function ClaimAction({ reportId }: { reportId: string }) {
   const claimReport = useReportStore((s) => s.claimReport);
-  const getVolunteerByName = useReportStore((s) => s.getVolunteerByName);
+  const currentVolunteerName = useReportStore((s) => s.currentVolunteerName);
   const { t } = useTranslation();
+  const [askingName, setAskingName] = useState(false);
+  const [name, setName] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+
+  const claim = async (volunteerName: string) => {
+    setPending(true);
+    setError("");
+    try {
+      await claimReport(reportId, volunteerName);
+    } catch {
+      setError(t("common.saveFailed"));
+      setPending(false);
+    }
+  };
+
+  const buttonStyle = {
+    width: "100%", padding: "8px 16px", borderRadius: "999px",
+    background: "linear-gradient(135deg, #8a9a4b, #6f8132)",
+    color: "white", fontSize: "13px", fontWeight: 600,
+    border: "none", cursor: pending ? "wait" : "pointer", transition: "transform 0.15s",
+    opacity: pending ? 0.7 : 1,
+  } as const;
+
+  const errorText = error && (
+    <p role="alert" style={{ marginTop: "6px", fontSize: "11px", color: "#dc2626", textAlign: "center" }}>{error}</p>
+  );
+
+  if (askingName) {
+    return (
+      <>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (name.trim() && !pending) claim(name.trim());
+          }}
+          style={{ display: "flex", gap: "6px" }}
+        >
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t("map.enterName")}
+            aria-label={t("map.enterName")}
+            maxLength={60}
+            style={{
+              flex: 1, minWidth: 0, padding: "7px 12px", borderRadius: "999px", fontSize: "13px",
+              border: "1px solid rgba(111,129,50,0.35)", outline: "none", background: "white",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!name.trim() || pending}
+            style={{ ...buttonStyle, width: "auto", opacity: name.trim() && !pending ? 1 : 0.5 }}
+          >
+            {pending ? "…" : t("map.confirmClaim")}
+          </button>
+        </form>
+        {errorText}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <button
+        disabled={pending}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (currentVolunteerName) {
+            claim(currentVolunteerName);
+          } else {
+            setAskingName(true);
+          }
+        }}
+        style={buttonStyle}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        {pending ? t("common.saving") : t("map.claimForCleanup")}
+      </button>
+      {errorText}
+    </>
+  );
+}
+
+function ReportMarker({ report }: { report: Report }) {
+  const volunteer = useReportStore((s) =>
+    report.claimedBy ? s.volunteers.find((v) => v.name === report.claimedBy) : undefined
+  );
+  const { t, locale } = useTranslation();
   const [showProofModal, setShowProofModal] = useState(false);
 
   const color = report.status === "cleaned" ? "#6b7280" : SEVERITY_COLORS[report.severity];
   const fillOpacity = report.status === "cleaned" ? 0.3 : 0.6;
   const radius = report.severity === "high" ? 12 : report.severity === "medium" ? 10 : 8;
   const statusInfo = STATUS_LABELS[report.status];
-
-  const volunteer = report.claimedBy ? getVolunteerByName(report.claimedBy) : null;
 
   return (
     <>
@@ -64,14 +167,14 @@ function ReportMarker({ report }: { report: Report }) {
                       {t("map.before")}
                     </div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={report.imageUrl} alt="Before" style={{ width: "100%", height: "100px", objectFit: "cover" }} />
+                    <img src={report.imageUrl} alt={t("map.before")} onError={showImagePlaceholder} style={{ width: "100%", height: "100px", objectFit: "cover", display: "block" }} />
                   </div>
                   <div style={{ position: "relative" }}>
                     <div style={{ position: "absolute", top: "4px", left: "4px", zIndex: 10, padding: "1px 8px", borderRadius: "999px", background: "rgba(34,197,94,0.8)", color: "white", fontSize: "9px", fontWeight: 600 }}>
                       {t("map.after")}
                     </div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={report.afterImageUrl} alt="After" style={{ width: "100%", height: "100px", objectFit: "cover" }} />
+                    <img src={report.afterImageUrl} alt={t("map.after")} onError={showImagePlaceholder} style={{ width: "100%", height: "100px", objectFit: "cover", display: "block" }} />
                   </div>
                 </div>
               </div>
@@ -89,9 +192,9 @@ function ReportMarker({ report }: { report: Report }) {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={report.imageUrl}
-                    alt="Hotspot"
-                    style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "8px" }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    alt={t("map.before")}
+                    style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", display: "block" }}
+                    onError={showImagePlaceholder}
                   />
                 </div>
                 {/* Show "awaiting proof" for in-progress without after photo */}
@@ -118,7 +221,7 @@ function ReportMarker({ report }: { report: Report }) {
                   border: `1px solid ${SEVERITY_COLORS[report.severity]}40`,
                 }}
               >
-                ● {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)} · {SEVERITY_POINTS[report.severity]} {t("map.pts")}
+                ● {t(`report.${report.severity}`)} · {SEVERITY_POINTS[report.severity]} {t("map.pts")}
               </span>
               <span
                 style={{
@@ -135,19 +238,19 @@ function ReportMarker({ report }: { report: Report }) {
 
             {/* Timestamp */}
             <p style={{ fontSize: "11px", color: "#64748b", marginBottom: "10px" }}>
-              📍 {report.lat.toFixed(4)}, {report.lng.toFixed(4)} · {timeAgo(report.timestamp)}
+              📍 {report.lat.toFixed(4)}, {report.lng.toFixed(4)} · {timeAgo(report.timestamp, locale)}
             </p>
 
             {/* Volunteer info — show when claimed or cleaned */}
             {volunteer && (
               <div style={{
                 padding: "10px 12px", borderRadius: "10px", marginBottom: "10px",
-                background: "rgba(8,145,178,0.06)", border: "1px solid rgba(8,145,178,0.15)",
+                background: "rgba(122,139,63,0.07)", border: "1px solid rgba(122,139,63,0.2)",
               }}>
                 <p style={{ fontSize: "10px", fontWeight: 600, color: "#94a3b8", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   {t("map.volunteerInfo")}
                 </p>
-                <p style={{ fontSize: "13px", fontWeight: 700, color: "#0e7490", marginBottom: "6px" }}>
+                <p style={{ fontSize: "13px", fontWeight: 700, color: "#44511b", marginBottom: "6px" }}>
                   👤 {volunteer.name}
                 </p>
                 <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "#475569" }}>
@@ -162,25 +265,7 @@ function ReportMarker({ report }: { report: Report }) {
             )}
 
             {/* Actions */}
-            {report.status === "reported" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const name = prompt("Enter your volunteer name:") || "Anonymous";
-                  claimReport(report.id, name);
-                }}
-                style={{
-                  width: "100%", padding: "8px 16px", borderRadius: "10px",
-                  background: "linear-gradient(135deg, #06b6d4, #0891b2)",
-                  color: "white", fontSize: "13px", fontWeight: 600,
-                  border: "none", cursor: "pointer", transition: "transform 0.15s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-              >
-                {t("map.claimForCleanup")}
-              </button>
-            )}
+            {report.status === "reported" && <ClaimAction reportId={report.id} />}
 
             {report.status === "in-progress" && (
               <button
@@ -189,8 +274,8 @@ function ReportMarker({ report }: { report: Report }) {
                   setShowProofModal(true);
                 }}
                 style={{
-                  width: "100%", padding: "8px 16px", borderRadius: "10px",
-                  background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                  width: "100%", padding: "8px 16px", borderRadius: "999px",
+                  background: "linear-gradient(135deg, #4f8a3e, #3f7a36)",
                   color: "white", fontSize: "13px", fontWeight: 600,
                   border: "none", cursor: "pointer", transition: "transform 0.15s",
                 }}
@@ -203,7 +288,7 @@ function ReportMarker({ report }: { report: Report }) {
 
             {report.status === "cleaned" && (
               <p style={{ fontSize: "12px", color: "#16a34a", textAlign: "center", fontWeight: 600 }}>
-                {t("map.cleanedAt")} {report.cleanedAt ? timeAgo(report.cleanedAt) : ""}
+                {t("map.cleanedAt")} {report.cleanedAt ? timeAgo(report.cleanedAt, locale) : ""}
               </p>
             )}
           </div>
@@ -218,19 +303,10 @@ function ReportMarker({ report }: { report: Report }) {
   );
 }
 
-// Render the proof modal at document body level to avoid Leaflet popup clipping
+// Render the proof modal at document body level to avoid Leaflet popup clipping.
+// This file only ever loads client-side (see withNoSSR), so document is available.
 function ProofModalPortal({ report, onClose }: { report: Report; onClose: () => void }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
-  // Dynamic import to avoid SSR issues
-  const { CleanupProofModal } = require("@/components/CleanupProofModal");
-  return <CleanupProofModal report={report} onClose={onClose} />;
+  return createPortal(<CleanupProofModal report={report} onClose={onClose} />, document.body);
 }
 
 export default function ReportMap() {

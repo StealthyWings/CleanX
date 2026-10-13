@@ -3,7 +3,9 @@
     "home": "Home",
     "report": "Report Spot",
     "dashboard": "Dashboard",
-    "leaderboard": "Leaderboard"
+    "leaderboard": "Leaderboard",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "landing": {
     "badge": "AI-Powered Civic Tech Platform",
@@ -57,7 +59,11 @@
     "submitted": "Report Submitted!",
     "submittedDesc": "Your garbage hotspot report has been logged. Track its status on the dashboard.",
     "viewDashboard": "View Dashboard",
-    "reportAnother": "Report Another"
+    "reportAnother": "Report Another",
+    "geoUnsupported": "Your browser doesn't support location access. Pick a spot on the map instead.",
+    "locationError": "Couldn't get your location. Check location permissions, or pick a spot on the map.",
+    "fileTooLarge": "That image is over 10MB — please choose a smaller one.",
+    "removeImage": "Remove image"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -92,7 +98,10 @@
     "before": "Before",
     "after": "After",
     "notFullyCleaned": "⏳ Awaiting cleanup proof",
-    "volunteerInfo": "Volunteer Info"
+    "volunteerInfo": "Volunteer Info",
+    "loading": "Loading map...",
+    "enterName": "Your name",
+    "confirmClaim": "Claim"
   },
   "proof": {
     "title": "Upload Cleanup Proof",
@@ -105,7 +114,8 @@
     "cancel": "Cancel",
     "required": "After photo is required to complete cleanup.",
     "duplicateWarning": "Hey! Looks like you have already submitted this image before, try taking a new one!",
-    "accountFlagged": "Account will be flagged"
+    "accountFlagged": "Account will be flagged",
+    "close": "Close"
   },
   "leaderboard": {
     "title": "Volunteer Leaderboard",
@@ -124,7 +134,9 @@
     "liveUpdates": "Live — updates in real time",
     "autoRefresh": "Auto-refresh",
     "viewAll": "View all →",
-    "top10Title": "Top 10 Volunteers"
+    "top10Title": "Top 10 Volunteers",
+    "perDay": "{n}/day",
+    "perWeek": "{n}/wk"
   },
   "activity": {
     "reportSubmitted": "Report submitted",
@@ -147,6 +159,14 @@
     "toReachTop10": "To reach Top 10",
     "inTop10": "You are in the Top 10!",
     "notFound": "Claim your first cleanup on the map to join the leaderboard, or make sure your name matches exactly."
+  },
+  "footer": {
+    "tagline": "Built for cleaner, greener cities.",
+    "mapData": "Map data ©"
+  },
+  "common": {
+    "saving": "Saving…",
+    "saveFailed": "Couldn't save — check your connection and try again."
   },
   "language": {
     "en": "EN",

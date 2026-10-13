@@ -48,7 +48,7 @@ function useActivityRenderer() {
 export default function ActivityFeed() {
   const activity = useReportStore((s) => s.activity);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const renderActivity = useActivityRenderer();
 
   useEffect(() => {
@@ -80,13 +80,13 @@ export default function ActivityFeed() {
                   ? 'bg-red-50 border-red-200'
                   : entry.type === 'image_duplicate'
                   ? 'bg-amber-50 border-amber-200'
-                  : 'bg-muted/20'
+                  : 'bg-white/50'
               }`}
             >
               <p className="text-sm leading-relaxed">{renderActivity(entry)}</p>
               <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground">
                 <Clock className="w-3 h-3" />
-                {timeAgo(entry.timestamp)}
+                {timeAgo(entry.timestamp, locale)}
               </div>
             </motion.div>
           ))}

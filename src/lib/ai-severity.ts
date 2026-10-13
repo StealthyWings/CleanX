@@ -1,3 +1,4 @@
+import type { MobileNet } from '@tensorflow-models/mobilenet';
 import { Severity } from './types';
 
 // Waste-related ImageNet class keywords
@@ -17,7 +18,7 @@ const LOW_SEVERITY_KEYWORDS = [
   'straw', 'lid', 'cork', 'cap',
 ];
 
-let modelPromise: Promise<any> | null = null;
+let modelPromise: Promise<MobileNet | null> | null = null;
 
 async function loadModel() {
   if (!modelPromise) {
@@ -64,7 +65,7 @@ export async function suggestSeverity(imageElement: HTMLImageElement): Promise<S
     if (score > 0) return 'low';
 
     // Fallback heuristic: if many objects detected with high confidence, assume medium
-    const totalConfidence = predictions.reduce((sum: number, p: any) => sum + p.probability, 0);
+    const totalConfidence = predictions.reduce((sum, p) => sum + p.probability, 0);
     if (totalConfidence > 3) return 'medium';
     if (totalConfidence > 1.5) return 'low';
 
@@ -77,6 +78,10 @@ export async function suggestSeverity(imageElement: HTMLImageElement): Promise<S
 // Pre-warm the model on idle
 export function preloadModel() {
   if (typeof window !== 'undefined') {
-    requestIdleCallback?.(() => loadModel()) ?? setTimeout(() => loadModel(), 3000);
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => loadModel());
+    } else {
+      setTimeout(() => loadModel(), 3000);
+    }
   }
 }

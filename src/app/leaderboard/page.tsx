@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Medal, Zap, TrendingUp } from "lucide-react";
+import { Medal, TrendingUp } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { useReportStore } from "@/lib/store";
@@ -14,29 +14,27 @@ const podiumColors = [
   { bg: "from-amber-700/20 to-orange-700/10", border: "border-amber-700/30", text: "text-amber-700", icon: "🥉" },
 ];
 
-function computeCleanupRate(cleanupCount: number, lastCleanup?: number): string {
+function computeCleanupRate(
+  cleanupCount: number,
+  lastCleanup: number | undefined,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): string {
   if (cleanupCount === 0 || !lastCleanup) return "—";
   const hoursActive = Math.max(1, (Date.now() - lastCleanup) / 3600000);
   const rate = cleanupCount / Math.max(1, hoursActive / 24); // per day
-  if (rate >= 1) return `${rate.toFixed(1)}/day`;
-  return `${(rate * 7).toFixed(1)}/wk`;
+  if (rate >= 1) return t("leaderboard.perDay", { n: rate.toFixed(1) });
+  return t("leaderboard.perWeek", { n: (rate * 7).toFixed(1) });
 }
 
 export default function LeaderboardPage() {
   // Select volunteers directly (stable reference) and sort in useMemo
   const volunteers = useReportStore((s) => s.volunteers);
+  const loaded = useReportStore((s) => s.loaded);
   const leaderboard = useMemo(
     () => [...volunteers].sort((a, b) => b.totalPoints - a.totalPoints),
     [volunteers]
   );
   const { t } = useTranslation();
-
-  // Live pulse indicator — toggles every second for animation
-  const [livePulse, setLivePulse] = useState(true);
-  useEffect(() => {
-    const timer = setInterval(() => setLivePulse((p) => !p), 1200);
-    return () => clearInterval(timer);
-  }, []);
 
   // Force re-render every 3s for "near real-time" feel (updates from Zustand are instant,
   // but this ensures the timeAgo and rate values stay fresh)
@@ -58,31 +56,9 @@ export default function LeaderboardPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          {/* Live indicator */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-emerald-400/20 text-xs font-medium text-emerald-600 mb-4">
-            <span className="relative flex h-2.5 w-2.5">
-              <span
-                className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 transition-opacity duration-700 ${
-                  livePulse ? "opacity-75 scale-150" : "opacity-0 scale-100"
-                }`}
-                style={{ transition: "opacity 0.7s, transform 0.7s" }}
-              />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-            </span>
-            {t("leaderboard.liveUpdates")}
-          </div>
-
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-amber-400/20 text-xs font-medium text-amber-600 mb-4 ml-2">
-            <Trophy className="w-3.5 h-3.5" />
-            {t("leaderboard.scoring")}: {t("leaderboard.lowPoints")} · {t("leaderboard.mediumPoints")} · {t("leaderboard.highPoints")}
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+          <h1 className="font-display font-bold uppercase tracking-[0.06em] text-ink text-4xl sm:text-6xl">
             {t("leaderboard.title")}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {t("leaderboard.subtitle")}
-          </p>
         </motion.div>
 
         {/* Top 3 Podium */}
@@ -100,7 +76,7 @@ export default function LeaderboardPage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: i * 0.1, type: "spring", stiffness: 300 }}
                   >
-                    <GlassCard className={`text-center p-6 border ${style.border} bg-gradient-to-br ${style.bg}`}>
+                    <GlassCard hover={false} className={`text-center p-6 border ${style.border} bg-linear-to-br ${style.bg} ${i === 0 ? "sm:-translate-y-2 shadow-lg shadow-amber-500/10" : ""}`}>
                       <div className="text-3xl mb-2">{style.icon}</div>
                       <h3 className="text-lg font-bold mb-1">{vol.name}</h3>
                       <p className={`text-3xl font-bold ${style.text} mb-1`}>
@@ -111,7 +87,7 @@ export default function LeaderboardPage() {
                         <span>🧹 {vol.cleanupCount} {t("leaderboard.cleanups")}</span>
                         <span className="flex items-center gap-1">
                           <TrendingUp className="w-3 h-3" />
-                          {computeCleanupRate(vol.cleanupCount, vol.lastCleanup)}
+                          {computeCleanupRate(vol.cleanupCount, vol.lastCleanup, t)}
                         </span>
                       </div>
                     </GlassCard>
@@ -132,13 +108,15 @@ export default function LeaderboardPage() {
           <div className="px-5 py-3 border-b border-border/20 flex items-center gap-2">
             <Medal className="w-4 h-4 text-brand-light" />
             <h2 className="text-sm font-semibold">{t("leaderboard.top10Title")}</h2>
-            <span className="ml-auto text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <Zap className="w-3 h-3 text-emerald-500" />
-              {t("leaderboard.autoRefresh")}
-            </span>
           </div>
 
-          {top10.length === 0 ? (
+          {!loaded ? (
+            <div className="p-5 space-y-3" aria-busy="true">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="h-9 rounded-lg bg-muted/50 animate-pulse" />
+              ))}
+            </div>
+          ) : top10.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
               {t("leaderboard.noVolunteers")}
             </div>
@@ -146,11 +124,11 @@ export default function LeaderboardPage() {
             <div className="divide-y divide-border/10">
               {/* Header */}
               <div className="grid grid-cols-12 px-5 py-2 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                <div className="col-span-1">{t("leaderboard.rank")}</div>
-                <div className="col-span-4">{t("leaderboard.volunteer")}</div>
-                <div className="col-span-2 text-center">{t("leaderboard.cleanups")}</div>
-                <div className="col-span-2 text-center">{t("leaderboard.cleanupRate")}</div>
-                <div className="col-span-3 text-right">{t("leaderboard.points")}</div>
+                <div className="col-span-2 sm:col-span-1">{t("leaderboard.rank")}</div>
+                <div className="col-span-6 sm:col-span-4">{t("leaderboard.volunteer")}</div>
+                <div className="hidden sm:block col-span-2 text-center">{t("leaderboard.cleanups")}</div>
+                <div className="hidden sm:block col-span-2 text-center">{t("leaderboard.cleanupRate")}</div>
+                <div className="col-span-4 sm:col-span-3 text-right">{t("leaderboard.points")}</div>
               </div>
 
               {/* Rows */}
@@ -163,26 +141,29 @@ export default function LeaderboardPage() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
                     transition={{ delay: i * 0.03 }}
-                    className="grid grid-cols-12 px-5 py-3 items-center hover:bg-muted/10 transition-colors"
+                    className="grid grid-cols-12 px-5 py-3 items-center hover:bg-brand/[0.03] transition-colors"
                   >
-                    <div className="col-span-1">
-                      <span className={`text-sm font-bold ${i < 3 ? podiumColors[i].text : "text-muted-foreground"}`}>
+                    <div className="col-span-2 sm:col-span-1">
+                      <span className={`text-sm font-bold tabular-nums ${i < 3 ? podiumColors[i].text : "text-muted-foreground"}`}>
                         #{i + 1}
                       </span>
                     </div>
-                    <div className="col-span-4">
-                      <span className="text-sm font-medium">{vol.name}</span>
+                    <div className="col-span-6 sm:col-span-4 min-w-0">
+                      <p className="text-sm font-medium truncate">{vol.name}</p>
+                      <p className="sm:hidden text-[11px] text-muted-foreground">
+                        {vol.cleanupCount} {t("leaderboard.cleanups")}
+                      </p>
                     </div>
-                    <div className="col-span-2 text-center">
-                      <span className="text-sm text-muted-foreground">{vol.cleanupCount}</span>
+                    <div className="hidden sm:block col-span-2 text-center">
+                      <span className="text-sm text-muted-foreground tabular-nums">{vol.cleanupCount}</span>
                     </div>
-                    <div className="col-span-2 text-center">
+                    <div className="hidden sm:block col-span-2 text-center">
                       <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                         <TrendingUp className="w-3 h-3" />
-                        {computeCleanupRate(vol.cleanupCount, vol.lastCleanup)}
+                        {computeCleanupRate(vol.cleanupCount, vol.lastCleanup, t)}
                       </span>
                     </div>
-                    <div className="col-span-3 text-right">
+                    <div className="col-span-4 sm:col-span-3 text-right">
                       <span className="text-sm font-bold text-brand-light">
                         <AnimatedCounter value={vol.totalPoints} />
                         <span className="text-xs ml-1 text-muted-foreground">{t("leaderboard.pts")}</span>
